@@ -19,8 +19,11 @@ export function useSocket() {
       
       // Authenticate user if logged in
       if (session?.user) {
-        const userIdentifier = session.user.email || session.user.id
-        socketInstance.emit('authenticate', userIdentifier)
+        const user = session.user as { email?: string | null; id?: string }
+        const userIdentifier = user.email || user.id
+        if (userIdentifier) {
+          socketInstance.emit('authenticate', userIdentifier)
+        }
       }
     })
 
@@ -38,7 +41,7 @@ export function useSocket() {
     return () => {
       socketInstance.disconnect()
     }
-  }, [session?.user?.email])
+  }, [session?.user])
 
   return { socket, isConnected }
 }

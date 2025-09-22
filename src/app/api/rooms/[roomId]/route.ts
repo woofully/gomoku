@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
+import { getServerSession } from 'next-auth/next'
 import { prisma } from '@/lib/prisma'
 import { createEmptyBoard } from '@/lib/game-logic'
+
+// Import authOptions (we'll create a shared file)
+const authOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
+}
 
 // GET /api/rooms/[roomId] - Get specific room
 export async function GET(
@@ -42,7 +47,7 @@ export async function POST(
 ) {
   const { roomId } = await params
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

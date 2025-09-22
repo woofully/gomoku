@@ -1,7 +1,15 @@
 import NextAuth from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 
-const handler = NextAuth({
+// Define WeChat profile type
+interface WeChatProfile {
+  openid: string
+  nickname: string
+  headimgurl: string
+  [key: string]: string | number | boolean | null | undefined
+}
+
+const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
     GoogleProvider({
@@ -24,7 +32,7 @@ const handler = NextAuth({
       },
       token: {
         url: "https://api.weixin.qq.com/sns/oauth2/access_token",
-        async request({ client, params, checks, provider }) {
+        async request({ params }: { params: { code: string } }) {
           const response = await fetch(
             `https://api.weixin.qq.com/sns/oauth2/access_token?appid=${process.env.WECHAT_APP_ID}&secret=${process.env.WECHAT_APP_SECRET}&code=${params.code}&grant_type=authorization_code`
           );
@@ -41,7 +49,7 @@ const handler = NextAuth({
       },
       userinfo: {
         url: "https://api.weixin.qq.com/sns/userinfo",
-        async request({ tokens }) {
+        async request({ tokens }: { tokens: { access_token: string; openid: string } }) {
           const response = await fetch(
             `https://api.weixin.qq.com/sns/userinfo?access_token=${tokens.access_token}&openid=${tokens.openid}&lang=en`
           );
@@ -50,7 +58,7 @@ const handler = NextAuth({
       },
       clientId: process.env.WECHAT_APP_ID!,
       clientSecret: process.env.WECHAT_APP_SECRET!,
-      profile(profile) {
+      profile(profile: WeChatProfile) {
         return {
           id: profile.openid,
           name: profile.nickname || `WeChat User ${profile.openid.slice(-4)}`,
@@ -61,7 +69,8 @@ const handler = NextAuth({
     },
   ],
   callbacks: {
-    async jwt({ token, account, user }) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async jwt({ token, account, user }: { token: any; account: any; user: any }) {
       if (account) {
         token.accessToken = account.access_token
         token.provider = account.provider
@@ -71,7 +80,8 @@ const handler = NextAuth({
       }
       return token
     },
-    async session({ session, token }) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async session({ session, token }: { session: any; token: any }) {
       return {
         ...session,
         accessToken: token.accessToken,
@@ -82,11 +92,13 @@ const handler = NextAuth({
         }
       }
     },
-    async signIn({ user, account, profile }) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async signIn({ user, account, profile }: { user: any; account: any; profile: any }) {
       if (account?.provider === 'wechat') {
         // For WeChat, we use the openid as the unique identifier
-        user.email = user.email || `${profile?.openid}@wechat.local`
-        user.id = profile?.openid || user.id
+        const wechatProfile = profile as WeChatProfile
+        user.email = user.email || `${wechatProfile?.openid}@wechat.local`
+        user.id = wechatProfile?.openid || user.id
       }
       return true
     },
@@ -94,6 +106,8 @@ const handler = NextAuth({
   pages: {
     signIn: '/auth/signin',
   },
-})
+}
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const handler = (NextAuth as any)(authOptions)
 export { handler as GET, handler as POST }
