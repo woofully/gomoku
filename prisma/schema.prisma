@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String     @id @default(cuid())
+  email      String     @unique
+  name       String?
+  image      String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  blackGames GameRoom[] @relation("BlackPlayer")
+  whiteGames GameRoom[] @relation("WhitePlayer")
+}
+
+model GameRoom {
+  id            String     @id @default(cuid())
+  name          String
+  status        GameStatus @default(WAITING)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  blackPlayerId String?
+  whitePlayerId String?
+  board         String     @default("")
+  currentPlayer String     @default("black")
+  winner        String?
+  isGameOver    Boolean    @default(false)
+  moveHistory   String     @default("[]")
+  moveCount     Int        @default(0)
+  blackPlayer   User?      @relation("BlackPlayer", fields: [blackPlayerId], references: [id])
+  whitePlayer   User?      @relation("WhitePlayer", fields: [whitePlayerId], references: [id])
+}
+
+enum GameStatus {
+  WAITING
+  PLAYING
+  FINISHED
+}
