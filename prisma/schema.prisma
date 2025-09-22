@@ -9,13 +9,17 @@ datasource db {
 
 model User {
   id         String     @id @default(cuid())
-  email      String     @unique
+  email      String?    @unique
   name       String?
   image      String?
+  provider   String?    // oauth provider (google, wechat)
+  providerId String?    // unique id from provider
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
   blackGames GameRoom[] @relation("BlackPlayer")
   whiteGames GameRoom[] @relation("WhitePlayer")
+
+  @@unique([provider, providerId])
 }
 
 model GameRoom {

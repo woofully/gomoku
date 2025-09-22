@@ -161,27 +161,39 @@ app.prepare().then(() => {
     console.log('Client connected:', socket.id)
 
     // Handle user authentication and online status
-    socket.on('authenticate', async (userEmail) => {
-      if (!userEmail) return
+    socket.on('authenticate', async (userIdentifier) => {
+      if (!userIdentifier) return
       
       try {
-        // Get user info from database
-        const user = await prisma.user.findUnique({
-          where: { email: userEmail }
+        // Get user info from database - try email first, then by ID
+        let user = await prisma.user.findUnique({
+          where: { email: userIdentifier }
         })
         
+        // If not found by email, try by ID (for WeChat users)
+        if (!user) {
+          user = await prisma.user.findUnique({
+            where: { id: userIdentifier }
+          })
+        }
+        
         if (user) {
+          const userKey = user.email || user.id
           // Add to online users
-          onlineUsers.set(userEmail, {
+          onlineUsers.set(userKey, {
             socketId: socket.id,
-            userInfo: { email: user.email, name: user.name, image: user.image },
+            userInfo: { 
+              email: user.email || `${user.id}@wechat.local`, 
+              name: user.name, 
+              image: user.image 
+            },
             status: 'available'
           })
           
           // Broadcast updated online users list
           broadcastOnlineUsers()
           
-          console.log(`User ${userEmail} is now online`)
+          console.log(`User ${userKey} is now online`)
         }
       } catch (error) {
         console.error('Error authenticating user:', error)

@@ -18,8 +18,9 @@ export function useSocket() {
       setIsConnected(true)
       
       // Authenticate user if logged in
-      if (session?.user?.email) {
-        socketInstance.emit('authenticate', session.user.email)
+      if (session?.user) {
+        const userIdentifier = session.user.email || session.user.id
+        socketInstance.emit('authenticate', userIdentifier)
       }
     })
 
