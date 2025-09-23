@@ -153,7 +153,12 @@ app.prepare().then(() => {
     cors: {
       origin: "*",
       methods: ["GET", "POST"]
-    }
+    },
+    transports: ['websocket', 'polling'], // Enable both transports
+    allowEIO3: true, // Allow older engine.io clients
+    pingTimeout: 60000, // Increase ping timeout for mobile
+    pingInterval: 25000, // Increase ping interval for mobile
+    upgradeTimeout: 30000, // Increase upgrade timeout for mobile
   })
 
   // Socket.io event handlers

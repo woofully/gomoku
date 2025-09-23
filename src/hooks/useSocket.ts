@@ -10,8 +10,14 @@ export function useSocket() {
   const { data: session } = useSession()
 
   useEffect(() => {
-    // Initialize socket connection
-    const socketInstance = io(process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000')
+    // Initialize socket connection with mobile-friendly configuration
+    const socketInstance = io(process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000', {
+      transports: ['websocket', 'polling'], // Enable fallback to polling for mobile devices
+      timeout: 20000, // Increase timeout for slower mobile connections
+      forceNew: true, // Force new connection to avoid caching issues
+      upgrade: true, // Allow upgrading from polling to websocket
+      rememberUpgrade: false, // Don't remember upgrade for mobile reliability
+    })
 
     socketInstance.on('connect', () => {
       console.log('Connected to Socket.io server')
